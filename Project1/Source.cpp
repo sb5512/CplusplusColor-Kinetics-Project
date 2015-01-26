@@ -1,8 +1,8 @@
 #include <iostream>
-
+using namespace std;
 int main()
 {
-	std::cout << "Hello World!";
+	cout << "Hello World!";
 	int hello;
-	std::cin >> hello;
+	cin >> hello;
 }
