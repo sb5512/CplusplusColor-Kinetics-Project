@@ -17,7 +17,7 @@ EdsError EDSCALLBACK handleObjectEvent(EdsObjectEvent event,
 
 void applicationRun()
 {
-	EdsError err = EDS_ERR_OK; 
+	EdsError err = EDS_ERR_OK;
 	EdsCameraRef camera = NULL;
 	bool isSDKLoaded = false;
 	// Initialize SDK
@@ -42,7 +42,7 @@ void applicationRun()
 	if (err == EDS_ERR_OK)
 	{
 		err = EdsSetPropertyEventHandler(camera, kEdsPropertyEvent_All,
-			handlePropertyEvent , NULL);
+			handlePropertyEvent, NULL);
 	}
 	// Set event handler
 	if (err == EDS_ERR_OK)
@@ -54,7 +54,7 @@ void applicationRun()
 	// Open session with camera
 	if (err == EDS_ERR_OK)
 	{
-		cout << "DO I NOT GET HERE"; 
+		cout << "DO I NOT GET HERE";
 		err = EdsOpenSession(camera);
 	}
 	/////
@@ -98,13 +98,13 @@ EdsError EDSCALLBACK handleObjectEvent(EdsObjectEvent event,
 	{
 		EdsRelease(object);
 	}
-	return EDS_ERR_OK; 
+	return EDS_ERR_OK;
 }
 EdsError EDSCALLBACK handlePropertyEvent(EdsPropertyEvent event,
 	EdsPropertyID property, EdsUInt32 inParam,
 	EdsVoid * context)
 {
-	
+
 	// do something
 	return EDS_ERR_OK;
 }
@@ -159,7 +159,7 @@ EdsError getTv(EdsCameraRef camera, EdsUInt32 *Tv)
 	return err;
 }
 
-EdsError getTvDesc(EdsCameraRef camera,  EdsPropertyDesc *TvDesc)
+EdsError getTvDesc(EdsCameraRef camera, EdsPropertyDesc *TvDesc)
 {
 	EdsError err = EDS_ERR_OK;
 	err = EdsGetPropertyDesc(camera, kEdsPropID_Tv, TvDesc);
@@ -173,6 +173,217 @@ EdsError setTv(EdsCameraRef camera, EdsUInt32 TvValue)
 	return err;
 }
 
+// Downloading image 
+
+EdsError downloadImage(EdsDirectoryItemRef directoryItem)
+{
+	EdsError err = EDS_ERR_OK;
+	EdsStreamRef stream = NULL;
+	// Get directory item information
+	EdsDirectoryItemInfo dirItemInfo;
+	err = EdsGetDirectoryItemInfo(directoryItem, &dirItemInfo);
+	// Create file stream for transfer destination
+	if (err == EDS_ERR_OK)
+	{
+		err = EdsCreateFileStream(dirItemInfo.szFileName,
+			kEdsFileCreateDisposition_CreateAlways,
+			kEdsAccess_ReadWrite, &stream);
+	}
+	// Download image
+	if (err == EDS_ERR_OK)
+	{
+		err = EdsDownload(directoryItem, dirItemInfo.size, stream);
+	}
+	// Issue notification that download is complete
+	if (err == EDS_ERR_OK)
+	{
+		err = EdsDownloadComplete(directoryItem);
+	}
+	// Release stream
+	if (stream != NULL)
+	{
+		EdsRelease(stream);
+		stream = NULL;
+	}
+	return err;
+}
+
+// Getting a file Object
+EdsError getVolume(EdsCameraRef camera, EdsVolumeRef * volume)
+{
+	EdsError err = EDS_ERR_OK;
+	EdsUInt32 count = 0;
+	// Get the number of camera volumes
+	err = EdsGetChildCount(camera, &count);
+	if (err == EDS_ERR_OK && count == 0)
+	{
+		err = EDS_ERR_DIR_NOT_FOUND;
+	}
+	// Get initial volume
+	if (err == EDS_ERR_OK)
+	{
+		//TODO:: the & volume isnot working
+		//err = EdsGetChildAtIndex(camera, 0, &volume);
+	}
+	return err;
+}
+
+
+EdsError getDCIMFolder(EdsVolumeRef volume, EdsDirectoryItemRef * directoryItem)
+{
+	EdsError err = EDS_ERR_OK;
+	EdsDirectoryItemRef dirItem = NULL;
+	EdsDirectoryItemInfo dirItemInfo;
+	EdsUInt32 count = 0;
+	// Get number of items under the volume
+	err = EdsGetChildCount(volume, &count);
+	if (err == EDS_ERR_OK && count == 0)
+	{
+		err = EDS_ERR_DIR_NOT_FOUND;
+	}
+	// Get DCIM folder
+
+	for (int i = 0; i < count && err == EDS_ERR_OK; i++)
+	{
+		// Get the ith item under the specifed volume
+		if (err == EDS_ERR_OK)
+		{
+			err = EdsGetChildAtIndex(volume, i, &dirItem);
+		}
+		// Get retrieved item information
+		if (err == EDS_ERR_OK)
+		{
+			err = EdsGetDirectoryItemInfo(dirItem, &dirItemInfo);
+		}
+		// Indicates whether or not the retrieved item is a DCIM folder.
+		if (err == EDS_ERR_OK)
+		{
+			if (_stricmp(dirItemInfo.szFileName, "DCIM") == 0 &&
+				dirItemInfo.isFolder == true)
+			{
+				directoryItem = &dirItem;
+				break;
+			}
+		}
+		// Release retrieved item
+		if (dirItem){
+			EdsRelease(dirItem);
+			dirItem = NULL;
+
+		}
+	}
+	return err;
+}
+
+EdsError takePicture(EdsCameraRef camera)
+{
+	return EdsSendCommand(camera , kEdsCameraCommand_TakePicture, 0);
+}
+
+//During bulb shooting
+
+EdsError BulbStart(EdsCameraRef camera)
+{
+	EdsError err;
+	bool locked = false;
+	err = EdsSendStatusCommand(camera, kEdsCameraStatusCommand_UILock, 0);
+	if (err == EDS_ERR_OK)
+	{
+		locked = true;
+	}
+	if (err == EDS_ERR_OK)
+	{
+		err = EdsSendCommand(camera, kEdsCameraCommand_BulbStart, 0);
+	}
+	if (err != EDS_ERR_OK && locked)
+	{
+		err = EdsSendStatusCommand(camera, kEdsCameraStatusCommand_UIUnLock, 0);
+	}
+	return err;
+}
+EdsError BulbStop(EdsCameraRef camera)
+{
+	EdsError err;
+	err = EdsSendCommand(camera, kEdsCameraCommand_BulbEnd, 0);
+	EdsSendStatusCommand(camera, kEdsCameraStatusCommand_UIUnLock, 0);
+	return err;
+}
+
+// Live view
+EdsError startLiveview(EdsCameraRef camera)
+{
+	EdsError err = EDS_ERR_OK;
+	// Get the output device for the live view image
+	EdsUInt32 device;
+	err = EdsGetPropertyData(camera, kEdsPropID_Evf_OutputDevice, 0, sizeof(device), &device);
+	// PC live view starts by setting the PC as the output device for the live view image.
+	if (err == EDS_ERR_OK)
+	{
+		device |= kEdsEvfOutputDevice_PC;
+		err = EdsSetPropertyData(camera, kEdsPropID_Evf_OutputDevice, 0, sizeof(device), &device);
+	}
+	// A property change event notification is issued from the camera if property settings are made successfully.
+	// Start downloading of the live view image once the property change notification arrives.
+	return err;
+}
+EdsError downloadEvfData(EdsCameraRef camera)
+{
+	EdsError err = EDS_ERR_OK;
+	EdsStreamRef stream = NULL;
+	EdsEvfImageRef evfImage = NULL;
+	// Create memory stream.
+	err = EdsCreateMemoryStream(0, &stream);
+	// Create EvfImageRef.
+	if (err == EDS_ERR_OK)
+	{
+		err = EdsCreateEvfImageRef(stream, &evfImage);
+	}
+	// Download live view image data.
+	if (err == EDS_ERR_OK)
+	{
+		err = EdsDownloadEvfImage(camera, evfImage);
+	}
+	// Get the incidental data of the image.
+	if (err == EDS_ERR_OK)
+	{
+		// Get the zoom ratio
+		EdsUInt32 zoom;
+		EdsGetPropertyData(evfImage, kEdsPropID_Evf_ZoomPosition, 0, sizeof(zoom), &zoom);
+		// Get the focus and zoom border position
+		EdsPoint point;
+		EdsGetPropertyData(evfImage , kEdsPropID_Evf_ZoomPosition, 0, sizeof(point), &point);
+	}
+	//
+	// Display image
+	//
+	// Release stream
+	if (stream != NULL)
+	{
+		EdsRelease(stream);
+		stream = NULL;
+	}
+	// Release evfImage
+	if (evfImage != NULL)
+	{
+		EdsRelease(evfImage);
+		evfImage = NULL;
+	}
+	return err;
+}
+EdsError endLiveview(EdsCameraRef camera)
+{
+	EdsError err = EDS_ERR_OK;
+	// Get the output device for the live view image
+	EdsUInt32 device;
+	err = EdsGetPropertyData(camera, kEdsPropID_Evf_OutputDevice, 0, sizeof(device), &device);
+	// PC live view ends if the PC is disconnected from the live view image output device.
+	if (err == EDS_ERR_OK)
+	{
+		device &= ~kEdsEvfOutputDevice_PC;
+		err = EdsSetPropertyData(camera, kEdsPropID_Evf_OutputDevice, 0, sizeof(device), &device);
+	}
+	return err;
+}
 
 
 int main()
