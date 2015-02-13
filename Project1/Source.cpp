@@ -13,6 +13,123 @@ EdsError EDSCALLBACK handleStateEvent(EdsStateEvent event,
 EdsError EDSCALLBACK handleObjectEvent(EdsObjectEvent event,
 	EdsBaseRef object,
 	EdsVoid * context);
+EdsError takePicture(EdsCameraRef camera);
+EdsError getTv(EdsCameraRef camera, EdsUInt32 *Tv);
+EdsError startLiveview(EdsCameraRef camera);
+EdsError downloadImage(EdsDirectoryItemRef directoryItem);
+
+
+bool downloadLastImage(EdsCameraRef camera){
+
+	EdsVolumeRef 		theVolumeRef = NULL;
+	EdsDirectoryItemRef	dirItemRef_DCIM = NULL;
+	EdsDirectoryItemRef	dirItemRef_Sub = NULL;
+	EdsDirectoryItemRef	dirItemRef_Image = NULL;
+
+	EdsDirectoryItemInfo dirItemInfo_Image;
+
+	EdsError err = EDS_ERR_OK;
+	EdsUInt32 Count = 0;
+	bool success = false;
+
+	//get the number of memory devices
+	err = EdsGetChildCount(camera, &Count);
+	if (Count == 0){
+		printf("Memory device not found\n");
+		err = EDS_ERR_DEVICE_NOT_FOUND;
+		return false;
+	}
+
+	// Download Card No.0 contents
+	err = EdsGetChildAtIndex(camera, 0, &theVolumeRef);
+	//        if ( err == EDS_ERR_OK ){
+	//            printf("getting volume info\n");
+	//            //err = EdsGetVolumeInfo( theVolumeRef, &volumeInfo ) ;
+	//        }
+
+	//Now lets find out how many Folders the volume has
+	if (err == EDS_ERR_OK){
+		err = EdsGetChildCount(theVolumeRef, &Count);
+
+		if (err == EDS_ERR_OK){
+
+			//Lets find the folder called DCIM
+			bool bFoundDCIM = false;
+			for (int i = 0; i < Count; i++){
+				err = EdsGetChildAtIndex(theVolumeRef, i, &dirItemRef_DCIM);
+				if (err == EDS_ERR_OK){
+					EdsDirectoryItemInfo dirItemInfo;
+					err = EdsGetDirectoryItemInfo(dirItemRef_DCIM, &dirItemInfo);
+					if (err == EDS_ERR_OK){
+						string folderName = dirItemInfo.szFileName;
+						if (folderName == "DCIM"){
+							bFoundDCIM = true;
+							printf("Found the DCIM folder at index %i\n", i);
+							break;
+						}
+					}
+				}
+				//we want to release the directories that don't match
+				//TODO easyRelease(dirItemRef_DCIM);
+			}
+
+			//This is a bit silly.
+			//Essentially we traverse into the DCIM folder, then we go into the last folder in there, then we
+			//get the last image in last folder.
+			if (bFoundDCIM && dirItemRef_DCIM != NULL){
+				//now we are going to look for the last folder in DCIM
+				Count = 0;
+				err = EdsGetChildCount(dirItemRef_DCIM, &Count);
+
+				bool foundLastFolder = false;
+				if (Count > 0){
+					int lastIndex = Count - 1;
+
+					EdsDirectoryItemInfo dirItemInfo_Sub;
+
+					err = EdsGetChildAtIndex(dirItemRef_DCIM, lastIndex, &dirItemRef_Sub);
+					err = EdsGetDirectoryItemInfo(dirItemRef_Sub, &dirItemInfo_Sub);
+
+					printf("Last Folder is %s \n", dirItemInfo_Sub.szFileName);
+
+					EdsUInt32 jpgCount = 0;
+					err = EdsGetChildCount(dirItemRef_Sub, &jpgCount);
+
+					if (jpgCount > 0){
+						int latestJpg = jpgCount - 1;
+
+						err = EdsGetChildAtIndex(dirItemRef_Sub, latestJpg, &dirItemRef_Image);
+						err = EdsGetDirectoryItemInfo(dirItemRef_Image, &dirItemInfo_Image);
+
+						printf("Latest image is %s \n", dirItemInfo_Image.szFileName);
+						success = true;
+					}
+					else{
+						printf("Error - No jpegs inside %s\n", dirItemInfo_Image.szFileName);
+					}
+				}
+				else{
+					printf("Error - No subfolders inside DCIM!\n");
+				}
+			}
+		}
+	}
+	if (success){
+		success = downloadImage(dirItemRef_Image);
+	}
+
+	/*easyRelease(theVolumeRef);
+	easyRelease(dirItemRef_DCIM);
+	easyRelease(dirItemRef_Sub);
+	easyRelease(dirItemRef_Image);
+
+	postCommand();
+	*/
+	return success;
+}
+
+
+
 
 
 void applicationRun()
@@ -22,19 +139,22 @@ void applicationRun()
 	bool isSDKLoaded = false;
 	// Initialize SDK
 	err = EdsInitializeSDK();
-	cout << endl << "\t\tInitialized SDK with Error Code " << err;
+	
 	if (err == EDS_ERR_OK)
 	{
+		cout << endl << "\t\tInitialized SDK..........." << endl;
 		isSDKLoaded = true;
 	}
 	// Get first camera
 	if (err == EDS_ERR_OK)
 	{
 		err = getFirstCamera(&camera);
+		
 	}
 	// Set event handler
 	if (err == EDS_ERR_OK)
 	{
+		cout << "\t\t Got Camera..........." << endl;
 		err = EdsSetObjectEventHandler(camera, kEdsObjectEvent_All,
 			handleObjectEvent, NULL);
 	}
@@ -54,12 +174,35 @@ void applicationRun()
 	// Open session with camera
 	if (err == EDS_ERR_OK)
 	{
-		cout << "DO I NOT GET HERE";
 		err = EdsOpenSession(camera);
+		if (err = EDS_ERR_OK){
+			cout << "Camera loaded..................."<< endl;
+		}
+		
 	}
 	/////
 	// do something
-	cout << "DO I GET HERE";
+	
+	if (err == EDS_ERR_OK){
+		EdsUInt32 * tv = NULL;
+		EdsError err1 = NULL;
+		err1 = getTv(camera, tv);
+		//startLiveview(camera);
+		downloadLastImage(camera);
+		cout << "tv" << tv;
+		cout << "GOOD job" << endl;
+	}
+	int takePic;
+	cout << "Press 1 to take picture" << endl;
+	cout << "Press 0 to end camera process" << endl;
+
+	do {
+		cin >> takePic;
+		if (takePic == 1){
+			takePicture(camera);
+		}
+	} while (takePic != 0);
+
 	////
 	// Close session with camera
 	if (err == EDS_ERR_OK)
@@ -76,6 +219,7 @@ void applicationRun()
 	{
 		EdsTerminateSDK();
 	}
+	exit(0);
 }
 
 EdsError EDSCALLBACK handleObjectEvent(EdsObjectEvent event,
@@ -154,6 +298,7 @@ EdsError getTv(EdsCameraRef camera, EdsUInt32 *Tv)
 	err = EdsGetPropertySize(camera, kEdsPropID_Tv, 0, &dataType, &dataSize);
 	if (err == EDS_ERR_OK)
 	{
+		
 		err = EdsGetPropertyData(camera, kEdsPropID_Tv, 0, dataSize, Tv);
 	}
 	return err;
@@ -182,9 +327,11 @@ EdsError downloadImage(EdsDirectoryItemRef directoryItem)
 	// Get directory item information
 	EdsDirectoryItemInfo dirItemInfo;
 	err = EdsGetDirectoryItemInfo(directoryItem, &dirItemInfo);
+	cout << "am i Here for downloading image ? ";
 	// Create file stream for transfer destination
 	if (err == EDS_ERR_OK)
 	{
+		
 		err = EdsCreateFileStream(dirItemInfo.szFileName,
 			kEdsFileCreateDisposition_CreateAlways,
 			kEdsAccess_ReadWrite, &stream);
@@ -192,6 +339,7 @@ EdsError downloadImage(EdsDirectoryItemRef directoryItem)
 	// Download image
 	if (err == EDS_ERR_OK)
 	{
+		
 		err = EdsDownload(directoryItem, dirItemInfo.size, stream);
 	}
 	// Issue notification that download is complete
