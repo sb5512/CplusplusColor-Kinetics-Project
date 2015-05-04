@@ -4,8 +4,8 @@ using namespace std;
 
 Canon650DCamera::Canon650DCamera(){
 	camera = NULL;
-
 	isSDKLoaded = false;
+
 	// Initialize SDK
 	initialiseErr = EdsInitializeSDK();
 
@@ -15,6 +15,7 @@ Canon650DCamera::Canon650DCamera(){
 		cout << endl << "Initialized SDK..........." << endl;
 		isSDKLoaded = true;
 	}
+
 	// Get first camera
 	if (initialiseErr == EDS_ERR_OK)
 	{
@@ -28,6 +29,7 @@ Canon650DCamera::Canon650DCamera(){
 			cout << "Camera Device Not Found...........";
 		}
 	}
+
 	// Set event handler
 	if (initialiseErr == EDS_ERR_OK)
 	{
@@ -114,6 +116,8 @@ EdsError Canon650DCamera::getFirstCamera(EdsCameraRef *camera)
 	{
 		err = EdsGetChildAtIndex(cameraList, 0, camera);
 	}
+	
+	
 	// Release camera list
 	if (cameraList != NULL)
 	{
@@ -306,6 +310,54 @@ EdsError Canon650DCamera::setTv(EdsCameraRef camera, EdsUInt32 TvValue)
 	return err;
 }
 
+
+EdsError Canon650DCamera::setTvs(EdsCameraRef camera)
+{
+	EdsPropertyDesc* TvValue = new EdsPropertyDesc();
+	
+	EdsError err = EDS_ERR_OK;
+	
+		//EdsPropertyDesc data = new EdsPropertyDesc();
+
+		//err = EdsGetPropertyDesc(camera, EDSDK.PropID_ISOSpeed, out data);
+	
+	EdsDataType dataType ;
+	EdsUInt32 dataSize;
+	
+	//tv = new EdsChar[];
+	//EdsChar * t = new EdsChar[];
+	//err = EdsGetPropertySize(camera, kEdsPropID_ImageQuality, 0, &dataType, &dataSize);
+	err = EdsGetPropertySize(camera, kEdsPropID_MyMenu, 0, &dataType, &dataSize);
+	EdsUInt32* tv = new EdsUInt32[dataSize];
+	for (int i = 0; i < dataSize; i++)
+	{
+		tv[i] = 0;
+	}
+	cout << "What is my data Type ???   " << dataType << endl;
+	cout << "What is my data size???   " << dataSize << endl;
+	if (err == EDS_ERR_OK)
+	{
+		err = EdsGetPropertyData(camera, kEdsPropID_MyMenu, 0, dataSize, tv);
+		//tv[0];
+		if (err == EDS_ERR_OK){
+			for (int i = 0; i < dataSize; i++)
+			{
+
+				std::cout << " THIS IS product Name     " << tv[i] << endl;
+			}
+		}
+	}
+	/*tv[0] = tv[0] + 10;
+	err = EdsSetPropertyData(camera, kEdsPropID_MyMenu, 0, sizeof(tv[0]), &tv[0]);
+	if (err == EDS_ERR_OK)
+	{
+		cout << "BOOOOOOOOOO" << endl;
+	}*/
+	//err = EdsGetPropertyDesc(camera, kEdsPropID_ExposureCompensation, TvValue);
+	//std::cout <<" THIS IS TV VALUES     "<< TvValue->numElements << endl;
+	
+	return err;
+}
 
 
 // Getting a file Object

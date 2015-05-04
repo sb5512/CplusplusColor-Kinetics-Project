@@ -54,35 +54,39 @@ static EdsError EDSCALLBACK handleStateEvent(EdsStateEvent event,
 
 class Canon650DCamera {
 	private:
-		EdsCameraRef camera;
+		EdsCameraRef camera; // stores camera object obtained from getCamera function
 		EdsError initialiseErr = EDS_ERR_OK;
 		bool isSDKLoaded;
 
-		EdsError downloadImage(EdsDirectoryItemRef directoryItem);
+		EdsError downloadImage(EdsDirectoryItemRef directoryItem); // Helper function for downloadLastImage
 		EdsError getFirstCamera(EdsCameraRef *camera);
 	
 	public:
 
 		Canon650DCamera();
 		~ Canon650DCamera();
-		EdsCameraRef getCamera();
-		EdsError getInitialiseErr();
+		EdsCameraRef getCamera(); // Gets the installed camera as an object
+		EdsError getInitialiseErr(); // Returns an error if any task you want to perform is invalid
 
-		
+		EdsError takePicture(EdsCameraRef camera); // takes the picture 
+		bool downloadLastImage(EdsCameraRef camera); // Downloads the last image in the camera 
+
 		EdsError getTv(EdsCameraRef camera, EdsUInt32 *Tv);
 		EdsError getTvDesc(EdsCameraRef camera, EdsPropertyDesc *TvDesc);
 		EdsError setTv(EdsCameraRef camera, EdsUInt32 TvValue);
 
+
+
+		//testing this one 
+		EdsError setTvs(EdsCameraRef camera);
+		// testing this one ends
+		
 		EdsError startLiveview(EdsCameraRef camera);
 		EdsError endLiveview(EdsCameraRef camera);
 
 		EdsError BulbStart(EdsCameraRef camera);
 		EdsError BulbStop(EdsCameraRef camera);
-		EdsError downloadEvfData(EdsCameraRef camera);
-		
-		EdsError takePicture(EdsCameraRef camera);
-		bool downloadLastImage(EdsCameraRef camera);
-
-
+		EdsError downloadEvfData(EdsCameraRef camera);		
 };
 #endif
+
