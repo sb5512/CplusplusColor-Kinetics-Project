@@ -35,7 +35,7 @@ int main()
 		SendInput(1, &input, sizeof(INPUT));
 
 		int  j = 0;
-		while (j < 10){
+		while (j < 40){
 			j++;
 			input.type = INPUT_MOUSE;
 			input.mi.dwFlags = (MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP);
@@ -45,9 +45,8 @@ int main()
 			SendInput(1, &input, sizeof(INPUT));
 		}
 
-		Sleep(1000);
+		//Sleep(1000);
 		std::thread t1(changeChannel);
-
 		t1.join();
 
 		//updateChannel();
