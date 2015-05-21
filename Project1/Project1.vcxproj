@@ -12,6 +12,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="canon650D.h" />
+    <ClInclude Include="PDS_70mr.h" />
+    <ClInclude Include="PhilipsLightBulb.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -19,6 +21,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Canon65DCamera.cpp" />
+    <ClCompile Include="PDS_70mr.cpp" />
+    <ClCompile Include="PhilipsLightBulb.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

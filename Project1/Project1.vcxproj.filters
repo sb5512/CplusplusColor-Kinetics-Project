@@ -21,6 +21,12 @@
     <ClInclude Include="canon650D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PDS_70mr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PhilipsLightBulb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Project1.rc">
@@ -33,6 +39,12 @@
     </ClCompile>
     <ClCompile Include="Canon65DCamera.cpp">
       <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PDS_70mr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PhilipsLightBulb.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
