@@ -138,7 +138,7 @@ bool Canon650DCamera::downloadLastImage(EdsCameraRef camera){
 	EdsDirectoryItemRef	dirItemRef_DCIM = NULL;
 	EdsDirectoryItemRef	dirItemRef_Sub = NULL;
 	EdsDirectoryItemRef	dirItemRef_Image = NULL;
-	EdsDirectoryItemRef	dirItemRef_Image2 = NULL;
+	//EdsDirectoryItemRef	dirItemRef_Image2 = NULL;
 
 
 	EdsDirectoryItemInfo dirItemInfo_Image;
@@ -214,7 +214,7 @@ bool Canon650DCamera::downloadLastImage(EdsCameraRef camera){
 						int latestJpg = jpgCount - 1;
 
 						err = EdsGetChildAtIndex(dirItemRef_Sub, latestJpg, &dirItemRef_Image);
-						err = EdsGetChildAtIndex(dirItemRef_Sub, latestJpg - 1, &dirItemRef_Image2);
+						//err = EdsGetChildAtIndex(dirItemRef_Sub, latestJpg - 1, &dirItemRef_Image2);
 						err = EdsGetDirectoryItemInfo(dirItemRef_Image, &dirItemInfo_Image);
 
 						printf("Latest image is %s \n", dirItemInfo_Image.szFileName);
@@ -231,7 +231,7 @@ bool Canon650DCamera::downloadLastImage(EdsCameraRef camera){
 		}
 	}
 	if (success){
-		success = downloadImage(dirItemRef_Image2);
+		//success = downloadImage(dirItemRef_Image2);
 		success = downloadImage(dirItemRef_Image);
 	}
 
@@ -252,12 +252,14 @@ EdsError Canon650DCamera::downloadImage(EdsDirectoryItemRef directoryItem)
 	// Get directory item information
 	EdsDirectoryItemInfo dirItemInfo;
 	err = EdsGetDirectoryItemInfo(directoryItem, &dirItemInfo);
-	cout << "am i Here for downloading image ? name " << dirItemInfo.szFileName;
+	cout << "am i Here for downloading image name " << dirItemInfo.szFileName;
 	// Create file stream for transfer destination
 	if (err == EDS_ERR_OK)
 	{
-
-		err = EdsCreateFileStream(dirItemInfo.szFileName,
+		string str_path = "C:\\Users\\Sabin\\Desktop\\CameraPicProject\\";
+		str_path += dirItemInfo.szFileName;
+		const EdsChar* ch_dest = str_path.c_str();
+		err = EdsCreateFileStream(ch_dest/*dirItemInfo.szFileName*/,
 			kEdsFileCreateDisposition_CreateAlways,
 			kEdsAccess_ReadWrite, &stream);
 	}

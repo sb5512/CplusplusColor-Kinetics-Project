@@ -1,4 +1,5 @@
 #include "PhilipsLightBulb.h"
+#include "UTILS.h"
 
 // Lightbulb Subclass
 PhilipsLightBulb::PhilipsLightBulb(string serialNumber, string destinationAddress, unsigned short Port, SOCKET SendSocket, int lightNumber)
@@ -7,19 +8,42 @@ PhilipsLightBulb::PhilipsLightBulb(string serialNumber, string destinationAddres
 	this->destinationAddress = destinationAddress;
 	this->Port = Port;
 	this->lightNumber = lightNumber;
+	for (int i = 0; i < 3; i++){
+		currentRGB.push_back(0);
+	}
 }
 
-void PhilipsLightBulb::turnOn()
+void PhilipsLightBulb::turnOn(int Red , int Green , int Blue , vector<int> allLightRGB)
 {
+	string header = "0401dc4a010001010000000000000000ffffffff00"; // TODO MAKE IT GLOBAL
+	string packet = header;
+	for (int i = 0; i < lightNumber * 3; i++){
+		packet = packet + UTILS::decimalToHex(allLightRGB[i]);
+	}
+	packet = packet + UTILS::decimalToHex(Red) + UTILS::decimalToHex(Green) + UTILS::decimalToHex(Blue);
+
+	int remainingRGB = 12 - lightNumber * 3;
+	for (int j = 3; j < remainingRGB; j++){
+		packet = packet + UTILS::decimalToHex(allLightRGB[lightNumber * 3 + j]);
+	}
+
+	for (int byteCounter = packet.size(); byteCounter < 1024; byteCounter++){
+		packet = packet + "0";
+	}
 	vector<string> pkt;
-	pkt.push_back("0401dc4a01000102000000000000000");
+	pkt.push_back( packet);
 	sendReceivePackets(pkt);
+	setRGB(Red, Green, Blue);
 }
 
-void PhilipsLightBulb::turnOff(){
-	
+vector<int> PhilipsLightBulb:: getRGB(){
+	return currentRGB;
 }
-
+void PhilipsLightBulb::setRGB(int Red , int Green , int Blue){
+	currentRGB[0] = Red;
+	currentRGB[1] = Green;
+	currentRGB[2] = Blue;
+}
 PhilipsLightBulb::~PhilipsLightBulb()
 {
 }
@@ -29,10 +53,10 @@ void PhilipsLightBulb ::sendReceivePackets(vector<string> packet){
 	//---------------------------------------------
 	//Getting the packet to the format understood by socket during sending
 	for (int i = 0; i < packet.size(); i++){
-		stringToUpper(packet[i]);
+		UTILS::stringToUpper(packet[i]);
 		char * x = &packet[i][0u]; // converting string to char *
 		//cout << packet[i];
-		packet[i] = string_to_hex(x);
+		packet[i] = UTILS::string_to_hex(x);
 	}
 
 	//---------------------------------------------
@@ -52,7 +76,8 @@ void PhilipsLightBulb ::sendReceivePackets(vector<string> packet){
 	int j = 0;
 	while (j<packet.size()){
 		const char * pk1 = packet[j].c_str();
-		//cout << pk1;
+		cout << pk1;
+		Sleep(200);
 		sendResult = sendto(SendSocket,
 			pk1, pkt_length, 0, (SOCKADDR *)& DestAddr, sizeof (DestAddr));
 		j++;
@@ -64,9 +89,7 @@ void PhilipsLightBulb ::sendReceivePackets(vector<string> packet){
 		
 		return;
 	}
-	cout << "Packet has been sent. Type anything to end.." << endl;
-    int hehe;
-	cin >> hehe;
+	cout << "Packet has been sent." << endl;
 
 	/*
 	//-----------------------------------------------
@@ -84,39 +107,3 @@ void PhilipsLightBulb ::sendReceivePackets(vector<string> packet){
 	}
 	*/
 }
-
-
-std::string PhilipsLightBulb::string_to_hex(char* input)
-{
-	//cout << input;
-	static const char* const lut = "0123456789ABCDEF";
-	size_t len = strlen(input);
-	//if (len & 1) throw std::invalid_argument("odd length");
-
-	std::string output;
-	output.reserve(len / 2);
-	for (size_t i = 0; i < len - 1; i += 2)
-	{
-		char a = input[i];
-		const char* p = std::lower_bound(lut, lut + 16, a);
-		if (*p != a) throw std::invalid_argument("not a hex digit");
-
-		char b = input[i + 1];
-		const char* q = std::lower_bound(lut, lut + 16, b);
-		if (*q != b) throw std::invalid_argument("not a hex digit");
-
-		output.push_back(((p - lut) << 4) | (q - lut));
-	}
-	//cout << output;
-	return output;
-}
-
-
-void PhilipsLightBulb::stringToUpper(string &s)
-{
-	for (unsigned int l = 0; l < s.length(); l++)
-	{
-		s[l] = toupper(s[l]);
-	}
-}
-

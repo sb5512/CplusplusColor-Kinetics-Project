@@ -1,10 +1,7 @@
 #pragma once
 #include<iostream>
-#include <string>
-#include <algorithm>
-#include <vector>
 #include <windows.h>
-
+#include <vector>
 using namespace std;
 
 class PhilipsLightBulb
@@ -14,15 +11,15 @@ private:
 	string destinationAddress;
 	unsigned short Port;
 	int lightNumber;
-	// Helper functions
-	void stringToUpper(string &s);
-	std::string string_to_hex(char* input); //converts given string to hex value
-	void sendReceivePackets(vector<string> packet);
+	vector<int> currentRGB;	
 	void createSocketForConnection();
+
 public:
 	PhilipsLightBulb(string serialNumber, string destinationAddress, unsigned short Port, SOCKET SendSocket, int lightNumber);
 	~PhilipsLightBulb();
-	void turnOn();
-	void turnOff();
+	void turnOn(int Red, int Green, int Blue, vector<int> allLightRGB);
+	void sendReceivePackets(vector<string> packet);
+	vector<int> getRGB();
+	void setRGB(int Red, int Green, int Blue);
 };
 

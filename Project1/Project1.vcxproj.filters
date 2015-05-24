@@ -27,6 +27,9 @@
     <ClInclude Include="PhilipsLightBulb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UTILS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Project1.rc">
@@ -44,6 +47,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PhilipsLightBulb.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UTILS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
